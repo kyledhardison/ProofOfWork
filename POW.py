@@ -1,8 +1,9 @@
 import argparse
 import hashlib
+import time
 
 
-def targetgen(difficulty, target):
+def targetgen(difficulty, target, output=True):
     """
     Generate a target of length 256 based on POW difficulty
     """
@@ -11,15 +12,21 @@ def targetgen(difficulty, target):
     target_string = "0" * difficulty
     target_string += "1" * (length - difficulty)
 
-    print("Target Generated:")
-    print(target_string)
+    if output:
+        print("Target Generated:")
+        print(target_string)
     
     # Write as int for convenience
     with open(target, "w") as f:
         f.write(str(int(target_string, 2)))
 
+    return (int(target_string, 2))
+
 
 def solutiongen(target_file, input_file, solution_file):
+    """
+    Generate a hash solution such that hash(input || solution) <= target
+    """
     with open(target_file, "r") as f:
         target = int(f.read())
 
@@ -43,6 +50,10 @@ def solutiongen(target_file, input_file, solution_file):
         
 
 def verifysolution(input_file, solution_file, target_file):
+    """
+    Verify a solution, given input and target.
+    Output 1 for valid, 0 for invalid.
+    """
     with open(input_file, "r") as f:
         input = f.read()
 
@@ -56,15 +67,53 @@ def verifysolution(input_file, solution_file, target_file):
     h.update(bytearray(input, "UTF-8"))
     h.update(bytearray(solution))
     hash = int(h.hexdigest(), 16)
-    print(hash)
-    print(target)
-    print(solution)
+
     if hash <= target:
         print("Valid solution")
         print(1)
     else:
         print("Invalid solution")
         print(0)
+
+
+def performancetest(input_file):
+    """
+    Run a POW performance test, with difficulty 21<=d<=26
+    """
+    with open(input_file, "r") as f:
+        input = f.read()
+    
+    targets = []
+    for i in range(21, 27):
+        targets.append(targetgen(i, "data/target.txt", output=False))
+
+    solutions = []
+    times = []
+    start = time.time()
+    
+    h = hashlib.sha256()
+    h.update(bytearray(input, "UTF-8"))
+
+    for i in range(0,6):
+        s = 0
+        while True:
+            j = h.copy()
+            j.update(bytearray(s))
+            hash = int(j.hexdigest(), 16)
+            if hash <= targets[i] and hash not in solutions:
+                print("Difficulty " + str(i+21) + ":")
+                solutions.append(s)
+                print("Solution: " + str(s))
+                runtime = time.time() - start
+                times.append(runtime)
+                print("Runtime: " + str(runtime) + " seconds")
+
+                break
+            s += 1
+
+    print(solutions)
+    print(times)
+
 
 # Main function
 if __name__ == "__main__":
@@ -76,6 +125,7 @@ if __name__ == "__main__":
     target_parser = subparsers.add_parser("targetgen")
     solution_parser = subparsers.add_parser("solutiongen")
     verify_parser = subparsers.add_parser("verify")
+    performance_parser = subparsers.add_parser("performancetest")
 
     target_parser.add_argument("difficulty", help="POW Difficulty")
     target_parser.add_argument("target", help="target file")
@@ -88,6 +138,7 @@ if __name__ == "__main__":
     verify_parser.add_argument("solution", help="Solution file")
     verify_parser.add_argument("target", help="Target file")
 
+    performance_parser.add_argument("input", help="Input file")
 
     args = parser.parse_args()
 
@@ -98,4 +149,6 @@ if __name__ == "__main__":
         solutiongen(args.target, args.input, args.solution)
     elif (args.command == "verify"):
         verifysolution(args.input, args.solution, args.target)
+    elif (args.command == "performancetest"):
+        performancetest(args.input)
 
