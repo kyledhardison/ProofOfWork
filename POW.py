@@ -100,16 +100,13 @@ def performancetest(input_file):
             j = h.copy()
             j.update(bytearray(s))
             hash = int(j.hexdigest(), 16)
-            if hash <= targets[i] and hash not in solutions:
+            if hash <= targets[i] and s not in solutions:
                 print("Difficulty " + str(i+21) + ":")
                 solutions.append(s)
                 print("Solution: " + str(s))
-                if not times:
-                    runtime = time.time() - start
-                else:
-                    runtime = time.time() - times[i-1]
-                times.append(runtime)
-                print("Runtime: " + str(runtime) + " seconds")
+                timestamp = time.time()
+                times.append(timestamp)
+                print("timestamp: " + str(timestamp))
 
                 break
             s += 1
