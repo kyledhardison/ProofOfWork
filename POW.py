@@ -104,7 +104,10 @@ def performancetest(input_file):
                 print("Difficulty " + str(i+21) + ":")
                 solutions.append(s)
                 print("Solution: " + str(s))
-                runtime = time.time() - start
+                if not times:
+                    runtime = time.time() - start
+                else:
+                    runtime = time.time() - times[i-1]
                 times.append(runtime)
                 print("Runtime: " + str(runtime) + " seconds")
 
